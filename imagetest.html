@@ -220,14 +220,17 @@
 	}
 
 	function lel() {
+		var begin = performance.now();
 		renderCanvas(test['ko.png'], 'alice', ramp, ansiNoGray, rgbDistance);
+		var end = performance.now();
+		window.alert("Rendered in " + (end - begin).toFixed(2) + " ms");
 	}
 
 	function kek() {
 		altRenderCanvas(test['ko.png'], 'alice', ramp, ansiNoGray, rgbDistance);
 
 	}
-	
+
 	function comp() {
 		shit = compositeImages(test['ko.png'], test['m.png'], 39, 80);
 		renderCanvas(shit, 'alice', ramp, ansiColors, rgbDistance);
