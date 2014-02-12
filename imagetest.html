@@ -83,6 +83,19 @@
 		return "#" + paddedHexString(r) + paddedHexString (g) + paddedHexString(b);
 	}
 
+	function checkByteArray(byteArray) {
+		if (byteArray[0] != 0x52 || byteArray[1] != 0x47 || byteArray[2] != 0x42 || byteArray[3] != 0x41) {
+			alert('invalid RGBA byteArray');
+			return false;
+		var width = byteArray[4];
+		var height = byteArray[5];
+		var expectedSize = (width * height * 4) + 6;
+		if (byteArray.length != expectedSize)
+			alert('expected byteArray of size ' + expectedSize + ', got size ' + byteArray.length);
+		}
+		return true;
+	}
+
 	function generateCharacterSpan(red, green, blue, ramp, colorArray, distanceFunction) {
 		var returnSpan = document.createElement('span');
 		var intensity = Math.round((red + blue + green) / 3);
@@ -95,17 +108,11 @@
 	}
 
 	function renderCanvas(byteArray, canvasID, ramp, palette, distanceFunction) {
+		if (!checkByteArray(byteArray)) return false;
 		console.time('render');
 		// header check
-		if (byteArray[0] != 0x52 || byteArray[1] != 0x47 || byteArray[2] != 0x42 || byteArray[3] != 0x41) {
-			alert('invalid RGBA byteArray');
-			return false;
-		}
 		var width = byteArray[4];
 		var height = byteArray[5];
-		var expectedSize = (width * height * 4) + 6
-		if (byteArray.length != expectedSize)
-			alert('expected byteArray of size ' + expectedSize + ', got size ' + byteArray.length);
 		var returnPre = document.createElement('pre');
 		console.time('lel');
 		for (var i = 0; i < height; i++) {
@@ -123,32 +130,112 @@
 		console.timeEnd('render');
 	}
 
-	function generateSaveImage(imageName, imagesObject) {
+	// function altGenerateCharacterSpan(red, green, blue, ramp, colorArray, distanceFunction) {
+	// 	var color = colorArray[selectColor(red, green, blue, colorArray, distanceFunction)];
+	// 	array.push([selectCharacter(ramp, Math.round((red + blue + green) / 3)), generateColorCode(color[0], color[1], color[2])]);
+	// }
+
+	// function altRenderCanvas(byteArray, canvasID, ramp, palette, distanceFunction) {
+	// 	if (!checkByteArray(byteArray)) return false;
+	// 	console.time('altRender');
+	// 	array = new Array();
+	// 	var width = byteArray[4];
+	// 	var height = byteArray[5];
+	// 	console.time('lel');
+	// 	for (var i = 0; i < height; i++) {
+	// 		var lineOffset = (i * (width * 4)) + 6;
+	// 		for (var j = 0; j < width; j++) {
+	// 			var offset = lineOffset + (j * 4);
+	// 			altGenerateCharacterSpan(byteArray[offset], byteArray[offset + 1], byteArray[offset + 2], ramp, palette, distanceFunction);
+	// 		}
+	// 		array.push(['\n', '#000000']);
+	// 	}
+	// 	console.timeEnd('lel');
+	// 	var thing = document.getElementById(canvasID);
+	// 	var newThing = document.createElement('pre');
+	// 	for(i in array) {
+	// 		var shit = document.createElement('span');
+	// 		shit.setAttribute('style', 'color: ' + i[1]);
+	// 		shit.innerText = i[0];
+	// 		newThing.appendChild(shit);
+	// 	}
+	// 	document.replaceChild(newThing,thing.children[0]);
+	// 	console.timeEnd('altRender');
+	// }
+
+	function generateSaveImage(imageName, imagesObject, callback) {
+		if(typeof(callback)==='undefined') callback = function(){};
 		return function() {
 			var arrayBuffer = this.response;
 			if (arrayBuffer) {
 				imagesObject[imageName] = new Uint8Array(arrayBuffer);
+				callback();
 			}
 		}
 	}
 
-	function loadImage(url, imageObject) {
+	function loadImage(url, imageObject, callback) {
 		var req = new XMLHttpRequest();
 		req.open("GET", "rendered/"+url+".rgba", true);
 		console.log('fuck');
 		req.responseType = "arraybuffer";
 
-		req.onload = generateSaveImage(url, imageObject);
+		req.onload = generateSaveImage(url, imageObject, callback);
 
 		req.send();
 	}
 
-	test = {};
-	loadImage('ko.png', test);
+	function compositePoint(r1, g1, b1, r2, g2, b2, a2) {
+		alpha = a2 / 255;
+		return [Math.round((r1 * (1 - alpha)) + (r2 * alpha)),
+				Math.round((g1 * (1 - alpha)) + (g2 * alpha)),
+				Math.round((b1 * (1 - alpha)) + (b2 * alpha))];
+	}
+
+	function compositeImages(background, foreground, xOffset, yOffset) {
+		//if(!checkByteArray(background) || !checkByteArray(foreground)) return false;
+		console.time("composite");
+		var bWidth = background[4];
+		var bHeight = background[5];
+		var fWidth = foreground[4];
+		var fHeight = foreground[5];
+		returnArray = new Uint8Array(background);
+		for(var i = 0; i < fHeight; i++) {
+			if (yOffset + i >= bHeight) break;
+			var fLineOffset = (i * fWidth * 4) + 6;
+			var bLineOffset = ((i + yOffset) * bWidth * 4) + 6;
+			for(var j = 0; j < fWidth; j++) {
+				if((xOffset + j) >= bWidth) break;
+				var fOffset = fLineOffset + (4 * j);
+				var bOffset = bLineOffset + (4 * (j + xOffset));
+				var point = compositePoint(background[bOffset], background[bOffset + 1], background[bOffset + 2],
+					foreground[fOffset], foreground[fOffset + 1], foreground[fOffset + 2], foreground[fOffset + 3]);
+				for(var k = 0; k < 3; k++) {
+					returnArray[bOffset + k] = point[k];
+				}
+			}
+		}
+		console.timeEnd("composite");
+		return returnArray;
+	}
+
 	function lel() {
 		renderCanvas(test['ko.png'], 'alice', ramp, ansiNoGray, rgbDistance);
 	}
 
+	function kek() {
+		altRenderCanvas(test['ko.png'], 'alice', ramp, ansiNoGray, rgbDistance);
+
+	}
+	
+	function comp() {
+		shit = compositeImages(test['ko.png'], test['m.png'], 39, 80);
+		renderCanvas(shit, 'alice', ramp, ansiColors, rgbDistance);
+	}
+
+	test = {};
+	loadImage('ko.png', test, lel);
+	loadImage('m.png', test);
 	</script>
 </head>
 <body>
