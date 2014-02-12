@@ -1,0 +1,9 @@
+#!/bin/bash
+if [[ $# != 1 ]]; then
+	echo "Usage: render width"
+	exit 1
+fi
+cd source
+for i in *; do
+	../rgb $i $1
+done
