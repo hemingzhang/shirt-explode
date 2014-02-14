@@ -183,9 +183,12 @@
 	}
 
 	function generateDeltaArray(byteArray1, byteArray2) {
+		console.log('shi');
 		if (!checkByteArray(byteArray1)) return false;
 		if (!checkByteArray(byteArray2)) return false;
+		console.log('shit');
 		if ((byteArray1[4] != byteArray2[4]) || (byteArray1[5] != byteArray2[5])) return false;
+		console.log('shits');
 		var returnArray = new Array();
 		for (var i = 6; i < byteArray1.length; i+=4) {
 			for (var j = 0; j < 3; j++) {
@@ -217,7 +220,9 @@
 	function shittyTransition(canvasID, oldImage, newImage, speed, number, ramp, palette, distanceFunction) {
 		if (document.getElementById(canvasID).children[0].children.length != ((newImage.length - 6)/4)) return false;
 		var deltaArray = generateDeltaArray(oldImage, newImage);
+		var numberPoints = Math.round(deltaArray.length / 20);
 		var shittyInterval = setInterval(function(){
-			if(shittyTransitionStep(canvasID, newImage, deltaArray, number, ramp, palette, distanceFunction) === false) clearInterval(shittyInterval);
+			if(shittyTransitionStep(canvasID, newImage, deltaArray, numberPoints, ramp, palette, distanceFunction) === false) clearInterval(shittyInterval);
 		}, speed);
+		return shittyInterval;
 	}

@@ -66,6 +66,10 @@
 		lastPicture = comp2;
 	}
 
+	function qview(img){
+		loadImage(img, test, function(){renderCanvas(test[img], 'alice', ramp, ansiNoGray, rgbDistance)});
+	}
+
 	test = {};
 	loadImage('ko.png', test);
 	loadImage('m.png', test);
