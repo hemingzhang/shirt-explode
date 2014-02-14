@@ -83,13 +83,13 @@
 	function toggleRender(toggledG) {
 		lock = true;
 		toggleG(currentG, toggledG);
-		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 90, 5));
+		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 120, 5));
 	}
 
 	function switchBg(bgName) {
 		lock = true;
 		currentBg = bg[bgName];
-		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 90, 5));
+		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 120, 5));
 	}
 
 	bg = {};
