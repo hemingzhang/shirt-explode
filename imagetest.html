@@ -41,8 +41,10 @@
 
 	rgbPalette = [[170, 0,0],[0,170,0],[0,0,170]];
 
+	lc = new Canvas('alice', ramp, ansiNoGray, rgbDistance);
+
 	function lel() {
-		renderCanvas(test['ko.png'], 'alice', ramp, ansiNoGray, rgbDistance);
+		lc.renderCanvas(test['ko.png']);
 		lastPicture = test['ko.png'];
 	}
 
@@ -52,22 +54,22 @@
 	}
 
 	function caca() {
-		shittyTransition('alice', lastPicture, comp1, 1, 200, ramp, ansiNoGray, rgbDistance);
+		lc.shittyTransition(lastPicture, comp1, 1);
 		lastPicture = comp1;
 	}
 
 	function doodoo() {
-		shittyTransition('alice', lastPicture, test['ko.png'], 1, 200, ramp, ansiNoGray, rgbDistance);
+		lc.shittyTransition(lastPicture, test['ko.png'], 1);
 		lastPicture = test['ko.png'];
 	}
 
 	function poop() {
-		shittyTransition('alice', lastPicture, comp2, 1, 200, ramp, ansiNoGray, rgbDistance);
+		lc.shittyTransition(lastPicture, comp2, 1);
 		lastPicture = comp2;
 	}
 
 	function qview(img){
-		loadImage(img, test, function(){renderCanvas(test[img], 'alice', ramp, ansiNoGray, rgbDistance)});
+		loadImage(img, test, function(){lc.renderCanvas(test[img])});
 	}
 
 	test = {};

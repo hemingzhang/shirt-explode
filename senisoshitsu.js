@@ -1,3 +1,11 @@
+	function Canvas(canvasId, ramp, palette, distanceFunction){
+		this.canvasId = canvasId;
+		this.ramp = ramp;
+		this.palette = palette;
+		this.distanceFunction = distanceFunction;
+		this.transitionLock = false;
+	}
+
 	function euclidianDistance(a1,a2,a3,b1,b2,b3) {
 		return Math.sqrt(Math.pow((a1-b1),2) + Math.pow((a2-b2),2) + Math.pow((a3-b3),2));
 	}
@@ -66,7 +74,7 @@
 		return returnSpan;
 	}
 
-	function renderCanvas(byteArray, canvasID, ramp, palette, distanceFunction) {
+	Canvas.prototype.renderCanvas = function(byteArray) {
 		if (!checkByteArray(byteArray)) return false;
 		console.time('render');
 		// header check
@@ -78,14 +86,14 @@
 			var lineOffset = (i * (width * 4)) + 6;
 			for (var j = 0; j < width; j++) {
 				var offset = lineOffset + (j * 4);
-				var characterSpan = generateCharacterSpan(byteArray[offset], byteArray[offset + 1], byteArray[offset + 2], ramp, palette, distanceFunction);
+				var characterSpan = generateCharacterSpan(byteArray[offset], byteArray[offset + 1], byteArray[offset + 2], this.ramp, this.palette, this.distanceFunction);
 				returnPre.appendChild(characterSpan);
 			}
 			returnPre.appendChild(document.createTextNode("\n"));
 		}
 		console.timeEnd('lel');
-		var oldCanvas = document.getElementById(canvasID).firstChild;
-		document.getElementById(canvasID).replaceChild(returnPre, oldCanvas);
+		var oldCanvas = document.getElementById(this.canvasId).firstChild;
+		document.getElementById(this.canvasId).replaceChild(returnPre, oldCanvas);
 		console.timeEnd('render');
 	}
 
@@ -201,28 +209,29 @@
 		return returnArray;
 	}
 
-	function shittyTransitionStep(canvasID, newImage, deltaArray, number, ramp, palette, distanceFunction) {
+	Canvas.prototype.shittyTransitionStep = function(newImage, deltaArray, number) {
 		if (deltaArray.length === 0) {
 			console.log('dine');
 			return false;
 		}
 		if (deltaArray.length < number) number = deltaArray.length;
+		console.log('fuck');
 		for(var i = 0; i < number; i++) {
 			var pointID = deltaArray.shift();
-			var oldPoint = document.getElementById(canvasID).children[0].children[pointID];
-			oldPoint.innerText = selectCharacter(ramp, Math.round((newImage[pointID*4 + 6] + newImage[pointID*4 + 7] + newImage[pointID*4 + 8])/3));
-			var color = palette[selectColor(newImage[pointID*4 + 6], newImage[pointID*4 + 7], newImage[pointID*4 + 8], palette, distanceFunction)];
+			var oldPoint = document.getElementById(this.canvasId).children[0].children[pointID];
+			oldPoint.innerText = selectCharacter(this.ramp, Math.round((newImage[pointID*4 + 6] + newImage[pointID*4 + 7] + newImage[pointID*4 + 8])/3));
+			var color = this.palette[selectColor(newImage[pointID*4 + 6], newImage[pointID*4 + 7], newImage[pointID*4 + 8], this.palette, this.distanceFunction)];
 			var colorCode = generateColorCode(color[0], color[1], color[2]);
 			oldPoint.setAttribute('style', 'color: '+colorCode);
 		}
 	}
 
-	function shittyTransition(canvasID, oldImage, newImage, speed, number, ramp, palette, distanceFunction) {
-		if (document.getElementById(canvasID).children[0].children.length != ((newImage.length - 6)/4)) return false;
+	Canvas.prototype.shittyTransition = function(oldImage, newImage, speedFactor) {
+		if (document.getElementById(this.canvasId).children[0].children.length != ((newImage.length - 6)/4)) return false;
 		var deltaArray = generateDeltaArray(oldImage, newImage);
-		var numberPoints = Math.round(deltaArray.length / 20);
-		var shittyInterval = setInterval(function(){
-			if(shittyTransitionStep(canvasID, newImage, deltaArray, numberPoints, ramp, palette, distanceFunction) === false) clearInterval(shittyInterval);
-		}, speed);
+		var numberPoints = Math.round(deltaArray.length * speedFactor / 20);
+		var shittyInterval = setInterval((function(){
+			if(this.shittyTransitionStep(newImage, deltaArray, numberPoints) === false) clearInterval(shittyInterval);
+		}).bind(this), 4);
 		return shittyInterval;
 	}
