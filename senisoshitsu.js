@@ -3,7 +3,36 @@
 		this.ramp = ramp;
 		this.palette = palette;
 		this.distanceFunction = distanceFunction;
+		this.deltaArray = Array();
 		this.transitionLock = false;
+		this.width = 0;
+		this.height = 0;
+	}
+
+	function suArrayMerge(array1, array2) { // merges two sorted arrays with unique elements0
+		var i = 0;
+		var j = 0;
+		var result = Array();
+		while(i < array1.length && j < array2.length) {
+			if (array1[i] < array2[j]){
+				result.push(array1[i]);
+				i++;
+			}
+			else if (array1[i] == array2[j]) {
+				i++;
+			}
+			else if (array1[i] > array2[j]) {
+				result.push(array2[j]);
+				j++;
+			}
+		}
+		if(i == array1.length) {
+			result = result.concat(array2.slice(j));
+		}
+		else {
+			result = result.concat(array1.slice(i));
+		}
+		return result;
 	}
 
 	function euclidianDistance(a1,a2,a3,b1,b2,b3) {
@@ -80,6 +109,8 @@
 		// header check
 		var width = byteArray[4];
 		var height = byteArray[5];
+		this.width = width;
+		this.height = height;
 		var returnPre = document.createElement('pre');
 		console.time('lel');
 		for (var i = 0; i < height; i++) {
@@ -144,7 +175,6 @@
 	function loadImage(url, imageObject, callback) {
 		var req = new XMLHttpRequest();
 		req.open("GET", "rendered/"+url+".rgba", true);
-		console.log('fuck');
 		req.responseType = "arraybuffer";
 
 		req.onload = generateSaveImage(url, imageObject, callback);
@@ -191,12 +221,9 @@
 	}
 
 	function generateDeltaArray(byteArray1, byteArray2) {
-		console.log('shi');
 		if (!checkByteArray(byteArray1)) return false;
 		if (!checkByteArray(byteArray2)) return false;
-		console.log('shit');
 		if ((byteArray1[4] != byteArray2[4]) || (byteArray1[5] != byteArray2[5])) return false;
-		console.log('shits');
 		var returnArray = new Array();
 		for (var i = 6; i < byteArray1.length; i+=4) {
 			for (var j = 0; j < 3; j++) {
@@ -209,15 +236,13 @@
 		return returnArray;
 	}
 
-	Canvas.prototype.shittyTransitionStep = function(newImage, deltaArray, number) {
-		if (deltaArray.length === 0) {
-			console.log('dine');
+	Canvas.prototype.shittyTransitionStep = function(newImage, number) {
+		if (this.deltaArray.length === 0) {
 			return false;
 		}
-		if (deltaArray.length < number) number = deltaArray.length;
-		console.log('fuck');
+		if (this.deltaArray.length < number) number = this.deltaArray.length;
 		for(var i = 0; i < number; i++) {
-			var pointID = deltaArray.shift();
+			var pointID = this.deltaArray.shift();
 			var oldPoint = document.getElementById(this.canvasId).children[0].children[pointID];
 			oldPoint.innerText = selectCharacter(this.ramp, Math.round((newImage[pointID*4 + 6] + newImage[pointID*4 + 7] + newImage[pointID*4 + 8])/3));
 			var color = this.palette[selectColor(newImage[pointID*4 + 6], newImage[pointID*4 + 7], newImage[pointID*4 + 8], this.palette, this.distanceFunction)];
@@ -228,10 +253,33 @@
 
 	Canvas.prototype.shittyTransition = function(oldImage, newImage, speedFactor) {
 		if (document.getElementById(this.canvasId).children[0].children.length != ((newImage.length - 6)/4)) return false;
-		var deltaArray = generateDeltaArray(oldImage, newImage);
-		var numberPoints = Math.round(deltaArray.length * speedFactor / 20);
+		this.deltaArray = suArrayMerge(generateDeltaArray(oldImage, newImage), this.deltaArray);
+		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
 		var shittyInterval = setInterval((function(){
-			if(this.shittyTransitionStep(newImage, deltaArray, numberPoints) === false) clearInterval(shittyInterval);
+			if(this.shittyTransitionStep(newImage, numberPoints) === false) clearInterval(shittyInterval);
 		}).bind(this), 4);
 		return shittyInterval;
+	}
+
+	Canvas.prototype.insertText = function(textString, speed, number, color, xOffset, yOffset) {
+		console.time('text');
+		var insertionPoint = (this.width * yOffset) + xOffset;
+		var cutOff = (this.width * (yOffset + 1));
+		var da = Array();
+		for (var j = 0; j + insertionPoint < cutOff && j < textString.length; j++) da.push(j + insertionPoint);
+		var i = 0;
+		var interval = setInterval((function(){
+			for(var j = 0; j < number; j ++){
+				if ((insertionPoint + i) >= cutOff || i >= textString.length) {
+					clearInterval(interval);
+					console.timeEnd('text');
+					return;
+				};
+				var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + i];
+				element.innerText = textString[i];
+				element.style.color = color;
+				i++;
+			}
+		}).bind(this), speed);
+		this.deltaArray = suArrayMerge(this.deltaArray, da);
 	}
