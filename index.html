@@ -41,6 +41,8 @@
 
 	rgbPalette = [[170, 0,0],[0,170,0],[0,0,170]];
 
+	c = new Canvas('girls', ramp, ansiNoGray, rgbDistance);
+
 	function compositeG(bg, currentG, gWidth, vOffset) {
 		var composite = new Uint8Array(bg);
 		var width = bg[4];
@@ -54,7 +56,7 @@
 
 	function compositeTransition(oldImage, bg, currentG, gWidth, vOffset) {
 		var newImage = compositeG(bg, currentG, gWidth, vOffset);
-		var interval = shittyTransition('girls', oldImage, newImage, 1, 200, ramp, ansiNoGray, rgbDistance);
+		var interval = c.shittyTransition(oldImage, newImage, 0.5);
 		console.log(interval);
 		lock = false;
 		return newImage;
@@ -96,7 +98,7 @@
 	g = {};
 	rendered = {};
 	loadImage('bg1', bg, function(){
-		renderCanvas(bg['bg1'], 'girls', ramp, ansiNoGray, rgbDistance);
+		c.renderCanvas(bg['bg1']);
 		currentImage = bg['bg1'];
 		currentBg = bg['bg1'];
 		currentG = new Array();
