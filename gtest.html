@@ -83,13 +83,11 @@
 	}
 
 	function toggleRender(toggledG) {
-		lock = true;
 		toggleG(currentG, toggledG);
 		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 120, 5));
 	}
 
 	function switchBg(bgName) {
-		lock = true;
 		currentBg = bg[bgName];
 		currentImage = new Uint8Array(compositeTransition(currentImage, currentBg, currentG, 120, 5));
 	}
@@ -113,42 +111,38 @@
 	loadImage('g4', g);
 	loadImage('g5', g);
 
-	lock = false;
-
 	window.onkeydown = function(e){
-		if (lock === false) {
-			switch(e.keyCode){
-				case 49:
-					switchBg('bg1');
-					break;
-				case 50:
-					switchBg('bg2');
-					break;
-				case 51:
-					switchBg('bg4');
-					break;
-				case 52:
-					switchBg('bg5');
-					break;
-				case 53:
-					switchBg('bgs');
-					break;
-				case 54:
-					toggleRender('g1');
-					break;
-				case 55:
-					toggleRender('g2');
-					break;
-				case 56:
-					toggleRender('g3');
-					break;
-				case 57:
-					toggleRender('g4');
-					break;
-				case 48:
-					toggleRender('g5');
-					break;
-			}
+		switch(e.keyCode){
+			case 49:
+				switchBg('bg1');
+				break;
+			case 50:
+				switchBg('bg2');
+				break;
+			case 51:
+				switchBg('bg4');
+				break;
+			case 52:
+				switchBg('bg5');
+				break;
+			case 53:
+				switchBg('bgs');
+				break;
+			case 54:
+				toggleRender('g1');
+				break;
+			case 55:
+				toggleRender('g2');
+				break;
+			case 56:
+				toggleRender('g3');
+				break;
+			case 57:
+				toggleRender('g4');
+				break;
+			case 48:
+				toggleRender('g5');
+				break;
 		}
 	};
 	</script>
