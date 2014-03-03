@@ -7,6 +7,7 @@
 		this.transitionLock = false;
 		this.width = 0;
 		this.height = 0;
+		this.currentImage = Array();
 	}
 
 	function suArrayMerge(array1, array2) { // merges two sorted arrays with unique elements0
@@ -111,6 +112,7 @@
 		var height = byteArray[5];
 		this.width = width;
 		this.height = height;
+		this.currentImage = byteArray;
 		var returnPre = document.createElement('pre');
 		console.time('lel');
 		for (var i = 0; i < height; i++) {
@@ -128,40 +130,7 @@
 		console.timeEnd('render');
 	}
 
-	// function altGenerateCharacterSpan(red, green, blue, ramp, colorArray, distanceFunction) {
-	// 	var color = colorArray[selectColor(red, green, blue, colorArray, distanceFunction)];
-	// 	array.push([selectCharacter(ramp, Math.round((red + blue + green) / 3)), generateColorCode(color[0], color[1], color[2])]);
-	// }
-
-	// function altRenderCanvas(byteArray, canvasID, ramp, palette, distanceFunction) {
-	// 	if (!checkByteArray(byteArray)) return false;
-	// 	console.time('altRender');
-	// 	array = new Array();
-	// 	var width = byteArray[4];
-	// 	var height = byteArray[5];
-	// 	console.time('lel');
-	// 	for (var i = 0; i < height; i++) {
-	// 		var lineOffset = (i * (width * 4)) + 6;
-	// 		for (var j = 0; j < width; j++) {
-	// 			var offset = lineOffset + (j * 4);
-	// 			altGenerateCharacterSpan(byteArray[offset], byteArray[offset + 1], byteArray[offset + 2], ramp, palette, distanceFunction);
-	// 		}
-	// 		array.push(['\n', '#000000']);
-	// 	}
-	// 	console.timeEnd('lel');
-	// 	var thing = document.getElementById(canvasID);
-	// 	var newThing = document.createElement('pre');
-	// 	for(i in array) {
-	// 		var shit = document.createElement('span');
-	// 		shit.setAttribute('style', 'color: ' + i[1]);
-	// 		shit.innerText = i[0];
-	// 		newThing.appendChild(shit);
-	// 	}
-	// 	document.replaceChild(newThing,thing.children[0]);
-	// 	console.timeEnd('altRender');
-	// }
-
-	function generateSaveImage(imageName, imagesObject, callback) {
+	function generateSaveImageFunction(imageName, imagesObject, callback) {
 		if(typeof(callback)==='undefined') callback = function(){};
 		return function() {
 			var arrayBuffer = this.response;
@@ -177,7 +146,7 @@
 		req.open("GET", "rendered/"+url+".rgba", true);
 		req.responseType = "arraybuffer";
 
-		req.onload = generateSaveImage(url, imageObject, callback);
+		req.onload = generateSaveImageFunction(url, imageObject, callback);
 
 		req.send();
 	}
@@ -251,12 +220,18 @@
 		}
 	}
 
-	Canvas.prototype.shittyTransition = function(oldImage, newImage, speedFactor) {
+	Canvas.prototype.shittyTransition = function(newImage, speedFactor) {
+		if (this.transitionLock === true) return false;
 		if (document.getElementById(this.canvasId).children[0].children.length != ((newImage.length - 6)/4)) return false;
-		this.deltaArray = suArrayMerge(generateDeltaArray(oldImage, newImage), this.deltaArray);
+		this.transitionLock = true;
+		this.deltaArray = suArrayMerge(generateDeltaArray(this.currentImage, newImage), this.deltaArray);
 		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
 		var shittyInterval = setInterval((function(){
-			if(this.shittyTransitionStep(newImage, numberPoints) === false) clearInterval(shittyInterval);
+			if(this.shittyTransitionStep(newImage, numberPoints) === false) {
+				clearInterval(shittyInterval);
+				this.currentImage = newImage;
+				this.transitionLock = false;
+			}
 		}).bind(this), 4);
 		return shittyInterval;
 	}
