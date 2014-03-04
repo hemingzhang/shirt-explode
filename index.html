@@ -54,9 +54,11 @@
 		return composite;
 	}
 
-	function compositeTransition(bg, currentG, gWidth, vOffset) {
+	function compositeTransition(bg, currentG, gWidth, vOffset, textBoxEnabled, callback) {
+		if(callback === undefined) callback = function(){};
 		var newImage = compositeG(bg, currentG, gWidth, vOffset);
-		var interval = c.shittyTransition(newImage, 0.5);
+		if(textBoxEnabled) newImage = compositeImages(newImage, textBox['trans'], 0, 42);
+		var interval = c.shittyTransition(newImage, 1, callback);
 		console.log(interval);
 		lock = false;
 		return newImage;
@@ -71,30 +73,74 @@
 		}
 	}
 
-	function toggleG(currentG, toggledG) {
+	function toggleG(currentG, toggledG, gStack) {
 		for(i in currentG) {
 			if (currentG[i].name == toggledG) {
 				currentG.splice(i, 1);
+				for(j in gStack) {
+					if (gStack[j] == toggledG) gStack.splice(j, 1);
+				}
 				return;
 			}
 		}
 		currentG.push({name: toggledG, byteArray: g[toggledG]});
+		gStack.push(toggledG);
 		currentG.sort(compareG);
+
 	}
 
 	function toggleRender(toggledG) {
-		toggleG(currentG, toggledG);
-		compositeTransition(currentBg, currentG, 120, 5);
+		toggleG(currentG, toggledG, gStack);
+		compositeTransition(currentBg, currentG, 120, 5, textBoxEnabled, function(){
+			for(var i in c.currentTextLocations) {
+				c.removeText(i);
+			}
+			if(gStack.length !== 0 && textBoxEnabled) {
+				c.insertWrappedText(gText[gStack[gStack.length - 1]]['name'], 'name', 4, 44, 167, 1, true);
+				c.insertWrappedText(gText[gStack[gStack.length - 1]]['line'], 'line', 4, 48, 167, 1, false);
+			}
+		});
 	}
 
 	function switchBg(bgName) {
 		currentBg = bg[bgName];
-		compositeTransition(currentBg, currentG, 120, 5);
+		compositeTransition(currentBg, currentG, 120, 5, textBoxEnabled);
 	}
 
+	function toggleTextBox() {
+		if (!textBoxEnabled) {
+			var newImage = compositeImages(c.currentImage, textBox['trans'], 0, 42);
+			c.shittyTransition(newImage, 99999, function(){
+				if(gStack.length !== 0) {
+					c.insertWrappedText(gText[gStack[gStack.length - 1]]['name'], 'name', 4, 44, 167, 1, true);
+					c.insertWrappedText(gText[gStack[gStack.length - 1]]['line'], 'line', 4, 48, 167, 1, true);
+				}
+			});
+			textBoxEnabled = true;
+		}
+		else {
+			var newImage = compositeG(currentBg, currentG, 120, 5);
+			c.shittyTransition(newImage, 99999, function(){
+				for(var i in c.currentTextLocations) {
+					c.removeText(i);
+				}
+			});
+			textBoxEnabled = false;
+		}
+	}
+
+	gStack = Array();
+	gText = {
+		g1 : {name : "SUBJECT 1", line : "Google employees, interns, contractors, or family members thereof; or residents and/or nationals of Iran, Syria, Cuba, Sudan, North Korea and Myanmar (Burma), with whom we are prohibited by U.S. law from engaging in commerce, are ineligible to participate. Please also note that any residents of Argentina, Belarus, Brazil, Chile, Colombia, Kazakhstan, Mexico, Peru, Russia, and Ukraine that participate in the program will not receive a t-shirt or any promotional items for their participation."},
+		g2 : {name : "SUBJECT 2", line : "lel"},
+		g3 : {name : "SUBJECT 3", line : "lel"},
+		g4 : {name : "SUBJECT 4", line : "lel"},
+		g5 : {name : "SUBJECT 5", line : "lel"},
+	};
+	textBoxEnabled = false;
 	bg = {};
 	g = {};
-	rendered = {};
+	textBox = {};
 	loadImage('bg1', bg, function(){
 		c.renderCanvas(bg['bg1']);
 		currentBg = bg['bg1'];
@@ -109,9 +155,10 @@
 	loadImage('g3', g);
 	loadImage('g4', g);
 	loadImage('g5', g);
+	loadImage('trans', textBox);
 
 	window.onkeydown = function(e){
-		if(c.transitionLock === false){
+		if(!(c.transitionLock || c.textLock)){
 			switch(e.keyCode){
 				case 49:
 					switchBg('bg1');
@@ -142,6 +189,9 @@
 					break;
 				case 48:
 					toggleRender('g5');
+					break;
+				case 84:
+					toggleTextBox();
 					break;
 			}
 		}

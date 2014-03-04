@@ -5,9 +5,14 @@
 		this.distanceFunction = distanceFunction;
 		this.deltaArray = Array();
 		this.transitionLock = false;
+		this.textLock = false;
 		this.width = 0;
 		this.height = 0;
 		this.currentImage = Array();
+		this.textSpeed = 4;
+		this.textNumber = 2;
+		this.textColor = "#ffffff";
+		this.currentTextLocations = {};
 	}
 
 	function suArrayMerge(array1, array2) { // merges two sorted arrays with unique elements0
@@ -33,6 +38,27 @@
 		else {
 			result = result.concat(array1.slice(i));
 		}
+		return result;
+	}
+
+	function suArrayIntersection(subtrahend, subtractor) {
+		var i = 0;
+		var j = 0;
+		var result = Array();
+		while(i < subtrahend.length && j < subtractor.length) {
+			if  (subtrahend[i] < subtractor[j]){
+				result.push(subtrahend[i]);
+				i++;
+			}
+			else if (subtrahend[i] == subtractor[j]) {
+				i++;
+				j++;
+			}
+			else if (subtrahend[i] > subtractor[j]) {
+				j++;
+			}
+		}
+		result = result.concat(subtrahend.slice(i));
 		return result;
 	}
 
@@ -205,6 +231,14 @@
 		return returnArray;
 	}
 
+	Canvas.prototype.generateTextLocationArray = function() {
+		var result = Array();
+		for (i in this.currentTextLocations) {
+			result = suArrayMerge(result, this.currentTextLocations[i]);
+		}
+		return result;
+	}
+
 	Canvas.prototype.shittyTransitionStep = function(newImage, number) {
 		if (this.deltaArray.length === 0) {
 			return false;
@@ -216,45 +250,169 @@
 			oldPoint.innerText = selectCharacter(this.ramp, Math.round((newImage[pointID*4 + 6] + newImage[pointID*4 + 7] + newImage[pointID*4 + 8])/3));
 			var color = this.palette[selectColor(newImage[pointID*4 + 6], newImage[pointID*4 + 7], newImage[pointID*4 + 8], this.palette, this.distanceFunction)];
 			var colorCode = generateColorCode(color[0], color[1], color[2]);
-			oldPoint.setAttribute('style', 'color: '+colorCode);
+			oldPoint.style.color = colorCode;
 		}
 	}
 
-	Canvas.prototype.shittyTransition = function(newImage, speedFactor) {
-		if (this.transitionLock === true) return false;
+	Canvas.prototype.shittyTransition = function(newImage, speedFactor, callback) {
+		if (this.transitionLock || this.textLock) return false;
+		if (callback === undefined) callback = function(){};
 		if (document.getElementById(this.canvasId).children[0].children.length != ((newImage.length - 6)/4)) return false;
 		this.transitionLock = true;
-		this.deltaArray = suArrayMerge(generateDeltaArray(this.currentImage, newImage), this.deltaArray);
+		this.deltaArray = suArrayIntersection(generateDeltaArray(this.currentImage, newImage), this.generateTextLocationArray());
 		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
 		var shittyInterval = setInterval((function(){
 			if(this.shittyTransitionStep(newImage, numberPoints) === false) {
 				clearInterval(shittyInterval);
 				this.currentImage = newImage;
 				this.transitionLock = false;
+				callback();
 			}
 		}).bind(this), 4);
 		return shittyInterval;
 	}
 
-	Canvas.prototype.insertText = function(textString, speed, number, color, xOffset, yOffset) {
-		console.time('text');
-		var insertionPoint = (this.width * yOffset) + xOffset;
-		var cutOff = (this.width * (yOffset + 1));
-		var da = Array();
-		for (var j = 0; j + insertionPoint < cutOff && j < textString.length; j++) da.push(j + insertionPoint);
-		var i = 0;
-		var interval = setInterval((function(){
-			for(var j = 0; j < number; j ++){
-				if ((insertionPoint + i) >= cutOff || i >= textString.length) {
-					clearInterval(interval);
-					console.timeEnd('text');
-					return;
-				};
-				var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + i];
-				element.innerText = textString[i];
-				element.style.color = color;
-				i++;
+	// Canvas.prototype.insertText = function(textString, handle, xOffset, yOffset, instant) {
+	// 	console.time('text');
+	// 	var insertionPoint = (this.width * yOffset) + xOffset;
+	// 	var cutOff = (this.width * (yOffset + 1));
+	// 	var ta = Array();
+	// 	for (var j = 0; j + insertionPoint < cutOff && j < textString.length; j++) {
+	// 		ta.push(j + insertionPoint);
+	// 		if (instant) {
+	// 			var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + j];
+	// 			element.innerText = textString[j];
+	// 			element.style.color = this.textColor;
+	// 		}
+	// 	}
+	// 	this.currentTextLocations[handle] = ta;
+	// 	if (instant) console.timeEnd('text');
+	// 	if (!instant) {
+	// 		var i = 0;
+	// 		var interval = setInterval((function(){
+	// 			for(var j = 0; j < this.textNumber; j ++){
+	// 				if ((insertionPoint + i) >= cutOff || i >= textString.length) {
+	// 					clearInterval(interval);
+	// 					console.timeEnd('text');
+	// 					return;
+	// 				};
+	// 				var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + i];
+	// 				element.innerText = textString[i];
+	// 				element.style.color = this.textColor;
+	// 				i++;
+	// 			}
+	// 		}).bind(this), this.textSpeed);
+	// 	}
+	// }
+
+	Canvas.prototype.insertTextChar = function(char, insertionPoint) {
+		var element = document.getElementById(this.canvasId).children[0].children[insertionPoint];
+		element.innerText = char;
+		element.style.color = this.textColor;
+	}
+
+	Canvas.prototype.insertTextString = function(textString, insertionPoint, instant, callback) {
+		if(callback === undefined) callback = function(){};
+		if (instant) {
+			for(var i = 0; i < textString.length; i++) {
+				this.insertTextChar(textString[i], insertionPoint + i);
 			}
-		}).bind(this), speed);
-		this.deltaArray = suArrayMerge(this.deltaArray, da);
+			callback();
+		}
+		else {
+			var i = 0;
+			var interval = setInterval((function(){
+				if (i >= textString.length) {
+					clearInterval(interval);
+					callback();
+					return;
+				}
+				for (var j = 0; j < this.textNumber && i < textString.length; j++) {
+					this.insertTextChar(textString[i], insertionPoint + i);
+					i++;
+				}
+			}).bind(this), this.textSpeed);
+		}
+	}
+
+	Canvas.prototype.insertUnwrappedText = function(textString, handle, xOffset, yOffset, instant) {
+		if(this.textLock || this.transitionLock) return false;
+		this.textLock = true;
+		var insertionPoint = (this.width * yOffset) + xOffset;
+		var cutoffLength = Math.min(textString.length, this.width - xOffset);
+		var textLocation = Array();
+		for (var i = 0; i < cutoffLength; i++) {
+			textLocation.push(insertionPoint + i);
+		}
+		this.currentTextLocations[handle] = textLocation;
+		this.insertTextString(textString.slice(0, cutoffLength), insertionPoint, instant, (function(){this.textLock = false;}).bind(this));
+	}
+
+	function wrapText(textString, wrapWidth) {
+		var stringFragments = Array();
+		var charsProcessed = 0;
+		while (textString.length - charsProcessed > wrapWidth) {
+			var breakPoint = charsProcessed + wrapWidth;		// the first character of the next line
+			while (breakPoint >= charsProcessed) {
+				if (textString[breakPoint] === ' ') break;
+				breakPoint--;
+			}
+			if (breakPoint < charsProcessed) {
+				stringFragments.push(textString.slice(charsProcessed, charsProcessed + wrapWidth));
+				charsProcessed += wrapWidth;
+			}
+			else {
+				stringFragments.push(textString.slice(charsProcessed, breakPoint));
+				charsProcessed = breakPoint + 1;
+			}
+		}
+		var remainder = textString.slice(charsProcessed);
+		if (remainder.length != 0) stringFragments.push(remainder);
+		return stringFragments;
+	}
+
+	Canvas.prototype.insertTextStringDispatcher = function(stringFragments, insertionPoint, offset, index, instant) {
+		if(index >= stringFragments.length) {
+			this.textLock = false;
+			return;
+		}
+		this.insertTextString(stringFragments[index], insertionPoint + (index * offset), instant, (function(){
+			this.insertTextStringDispatcher(stringFragments, insertionPoint, offset, index + 1, instant);
+		}).bind(this));
+	}
+
+	Canvas.prototype.insertWrappedText = function(textString, handle, xOffset, yOffset, wrapWidth, lineSpacing, instant) {
+		if(this.textLock || this.transitionLock) return false;
+		this.textLock = true;
+		// Break up the string with whitespace
+		wrapWidth = Math.min(wrapWidth, this.width - xOffset);
+		var stringFragments = wrapText(textString, wrapWidth);
+		var availableLines = this.height - yOffset;
+		var requiredLines = stringFragments.length + (stringFragments.length - 1) * lineSpacing;
+		while (requiredLines > availableLines) {
+			stringFragments.pop();
+			requiredLines = stringFragments.length + (stringFragments.length - 1) * lineSpacing;
+		}
+		var insertionPoint = this.width * yOffset + xOffset;
+		var lineOffset = (1 + lineSpacing) * this.width;
+		textLocation = Array();
+		for(var i = 0; i < stringFragments.length; i++) {
+			for(var j = 0; j < stringFragments[i].length; j++) {
+				textLocation.push(insertionPoint + j + (i * (lineSpacing + 1) * this.width));
+			}
+		}
+		this.currentTextLocations[handle] = textLocation;
+		this.insertTextStringDispatcher(stringFragments, insertionPoint, lineOffset, 0, instant);
+
+	}
+
+	Canvas.prototype.removeText = function(handle) {
+		for (var i = 0; i < this.currentTextLocations[handle].length; i++) {
+			var pointID = this.currentTextLocations[handle][i];
+			var element = document.getElementById(this.canvasId).children[0].children[pointID];
+			element.innerText = selectCharacter(this.ramp, Math.round((this.currentImage[pointID*4 + 6] + this.currentImage[pointID*4 + 7] + this.currentImage[pointID*4 + 8])/3));
+			var color = this.palette[selectColor(this.currentImage[pointID*4 + 6], this.currentImage[pointID*4 + 7], this.currentImage[pointID*4 + 8], this.palette, this.distanceFunction)];
+			element.style.color = generateColorCode(color[0], color[1], color[2]);
+		}
+		delete this.currentTextLocations[handle];
 	}
