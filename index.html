@@ -90,14 +90,17 @@
 	}
 
 	function toggleRender(toggledG) {
+		var oldTop = gStack[gStack.length - 1];
 		toggleG(currentG, toggledG, gStack);
 		compositeTransition(currentBg, currentG, 120, 5, textBoxEnabled, function(){
-			for(var i in c.currentTextLocations) {
-				c.removeText(i);
-			}
-			if(gStack.length !== 0 && textBoxEnabled) {
-				c.insertWrappedText(gText[gStack[gStack.length - 1]]['name'], 'name', 4, 44, 167, 1, true);
-				c.insertWrappedText(gText[gStack[gStack.length - 1]]['line'], 'line', 4, 48, 167, 1, false);
+			if(gStack[gStack.length - 1] != oldTop) {
+				for(var i in c.currentTextLocations) {
+					c.removeText(i);
+				}
+				if(gStack.length !== 0 && textBoxEnabled) {
+					c.insertWrappedText(gText[gStack[gStack.length - 1]]['name'], 'name', 4, 44, 167, 1, true);
+					c.insertWrappedText(gText[gStack[gStack.length - 1]]['line'], 'line', 4, 48, 167, 1, false);
+				}
 			}
 		});
 	}
@@ -131,11 +134,11 @@
 
 	gStack = Array();
 	gText = {
-		g1 : {name : "SUBJECT 1", line : "Google employees, interns, contractors, or family members thereof; or residents and/or nationals of Iran, Syria, Cuba, Sudan, North Korea and Myanmar (Burma), with whom we are prohibited by U.S. law from engaging in commerce, are ineligible to participate. Please also note that any residents of Argentina, Belarus, Brazil, Chile, Colombia, Kazakhstan, Mexico, Peru, Russia, and Ukraine that participate in the program will not receive a t-shirt or any promotional items for their participation."},
-		g2 : {name : "SUBJECT 2", line : "lel"},
-		g3 : {name : "SUBJECT 3", line : "lel"},
-		g4 : {name : "SUBJECT 4", line : "lel"},
-		g5 : {name : "SUBJECT 5", line : "lel"},
+		g1 : {name : "SUBJECT 1", line : "\"The Book contains everything. Literally everything. The Story of every single subquantum particle and set of subquantum particles the Universe has ever seen, and every interaction that each one felt in its entire quintillion-year existence. And quarks, atoms, molecules, all chronicled from creation to destruction. Viruses, bacteria, cells. You will find the book for every blade of grass that ever grew and every ant, every cloud, every stone and pebble, every hair on every head. All thoroughly cross-referenced, of course. Though people of your sort are rarely interested in such mundane things. The Book itself is so staggeringly large and complete that no human could hope to get past the first half-billion volumes before becoming so thoroughly lost and despondent that they would give up, never finding anything of interest, unless the story of the very first E-subquark to come into existence after the Big Bang interested them, which it rarely would.\""},
+		g2 : {name : "SUBJECT 2", line : "\"Nobody invented me – but lots of people discovered me and were quite surprised. They discovered me when they looked round at the world and thought it was really beautiful or really mysterious and wondered where it came from. They discovered me when they were very very quiet on their own and felt a sort of peace and love they hadn’t expected. Then they invented ideas about me – some of them sensible and some of them not very sensible. From time to time I sent them some hints to help them get closer to what I’m really like. But there was nothing and nobody around before me to invent me.\""},
+		g3 : {name : "SUBJECT 3", line : "\"I wrote an extremely interesting paper on this exact subject, Tim, perhaps you didn't read it when I gave you a copy last year. There is an unbelievably long sequence of quantum universe simulators down there. An infinite number of them, in fact. Each of them is identical and each believes itself to be the top layer. There was an exceedingly good chance that ours would turn out to be somewhere in the sequence rather than at the top. The simulation starts with a Big Bang and is recalculated once every Planck time using the usual laws of nature and an arbitrary degree of accuracy. It doesn't calculate everything at once, just what we're looking at, which speeds up the process a little bit... metaphorically speaking... but it is still as accurate a simulation of the real universe as there can possibly be. Civilisation - indeed, all of history - should rise on this Earth precisely how it did in reality. There are no chances. It's all worked out to infinitely many decimal places.\""},
+		g4 : {name : "SUBJECT 4", line : "\"I'm a long way from home. Further from home than anybody else in the world has ever been, in fact. I'm not even in the world anymore. The world is a dot from where I'm standing. Floating. Drifting. Going nowhere at seventeen point two kilometres per second. It's cold. And dark. The Sun just about counts as a bright star at this distance; I can make it out if I squint. Her children? Drowned out. Glare at the point of light for long enough and she might wobble enough to betray Jupiter and Saturn. Far enough, I guess. So I squint. Fooooocus. Skim just enough energy from the embers of my nuclear pile to power the shutter...\""},
+		g5 : {name : "SUBJECT 5", line : "\"So anyway, the first time we pushed the button on the machine, this is what appeared. A steel ball, most probably a ball bearing of some kind, pulled back in time from some time in the future. We don't know where or when, as yet, seeing as the ball is completely lacking in identifying marks. But we do know for a fact that, at some point very shortly after the experiment, a steel ball identical to this one, somewhere in the world, vanished without trace. Between those two times, there were two identical steel balls in the world. Plus, I guess, the 'signal' connecting them together. When something appears in our time machine, it spits out a virtual signal. The signal goes forward in time and seeks its counterpart in the future and annihilates it when they meet each other. Or, to look at it another way, the signal is the ball travelling backwards in time.\""},
 	};
 	textBoxEnabled = false;
 	bg = {};

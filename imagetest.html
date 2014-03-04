@@ -71,6 +71,14 @@
 	function qview(img){
 		loadImage(img, test, function(){lc.renderCanvas(test[img])});
 	}
+	function fview(img, brightness){
+		loadImage(img, test, function(){
+			for(var i = 6; i < test[img].length; i++){
+				test[img][i] = Math.round(test[img][i] * brightness);
+			}
+			lc.renderCanvas(test[img]);
+		});
+	}
 
 	test = {};
 	loadImage('ko.png', test);

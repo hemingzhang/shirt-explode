@@ -1,13 +1,13 @@
 #!/bin/bash
-if [[ "$#" -ne 2 ]]; then
-echo "Usage: rgb file width"
+if [[ "$#" -ne 3 ]]; then
+echo "Usage: rgb file width contraststretch"
 exit 1
 fi
 if [ ! -d "../rendered" ]; then
 mkdir ../rendered
 fi
 mkdir temp
-convert "$1" -contrast-stretch 20%x0% -resize "$2"x temp/temp.png
+convert "$1" -contrast-stretch "$3"%x0% -resize "$2"x temp/temp.png
 convert temp/temp.png -resize "100%x52%" temp/temp2.png
 WIDTH=`identify -format "%w" temp/temp2.png`
 HEIGHT=`identify -format "%h" temp/temp2.png`
