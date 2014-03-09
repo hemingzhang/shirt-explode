@@ -239,18 +239,22 @@
 		return result;
 	}
 
-	Canvas.prototype.shittyTransitionStep = function(newImage, number) {
+	Canvas.prototype.rerenderPoint = function(pointId) {
+		var oldPoint = document.getElementById(this.canvasId).children[0].children[pointId];
+		oldPoint.innerText = selectCharacter(this.ramp, Math.round((this.currentImage[pointId*4 + 6] + this.currentImage[pointId*4 + 7] + this.currentImage[pointId*4 + 8])/3));
+		var color = this.palette[selectColor(this.currentImage[pointId*4 + 6], this.currentImage[pointId*4 + 7], this.currentImage[pointId*4 + 8], this.palette, this.distanceFunction)];
+		var colorCode = generateColorCode(color[0], color[1], color[2]);
+		oldPoint.style.color = colorCode;
+	}
+
+	Canvas.prototype.shittyTransitionStep = function(number) {
 		if (this.deltaArray.length === 0) {
 			return false;
 		}
 		if (this.deltaArray.length < number) number = this.deltaArray.length;
 		for(var i = 0; i < number; i++) {
-			var pointID = this.deltaArray.shift();
-			var oldPoint = document.getElementById(this.canvasId).children[0].children[pointID];
-			oldPoint.innerText = selectCharacter(this.ramp, Math.round((newImage[pointID*4 + 6] + newImage[pointID*4 + 7] + newImage[pointID*4 + 8])/3));
-			var color = this.palette[selectColor(newImage[pointID*4 + 6], newImage[pointID*4 + 7], newImage[pointID*4 + 8], this.palette, this.distanceFunction)];
-			var colorCode = generateColorCode(color[0], color[1], color[2]);
-			oldPoint.style.color = colorCode;
+			var pointId = this.deltaArray.shift();
+			this.rerenderPoint(pointId);
 		}
 	}
 
@@ -260,50 +264,17 @@
 		if (document.getElementById(this.canvasId).children[0].children.length != ((newImage.length - 6)/4)) return false;
 		this.transitionLock = true;
 		this.deltaArray = suArrayIntersection(generateDeltaArray(this.currentImage, newImage), this.generateTextLocationArray());
+		this.currentImage = newImage;
 		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
 		var shittyInterval = setInterval((function(){
-			if(this.shittyTransitionStep(newImage, numberPoints) === false) {
+			if(this.shittyTransitionStep(numberPoints) === false) {
 				clearInterval(shittyInterval);
-				this.currentImage = newImage;
 				this.transitionLock = false;
 				callback();
 			}
 		}).bind(this), 4);
 		return shittyInterval;
 	}
-
-	// Canvas.prototype.insertText = function(textString, handle, xOffset, yOffset, instant) {
-	// 	console.time('text');
-	// 	var insertionPoint = (this.width * yOffset) + xOffset;
-	// 	var cutOff = (this.width * (yOffset + 1));
-	// 	var ta = Array();
-	// 	for (var j = 0; j + insertionPoint < cutOff && j < textString.length; j++) {
-	// 		ta.push(j + insertionPoint);
-	// 		if (instant) {
-	// 			var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + j];
-	// 			element.innerText = textString[j];
-	// 			element.style.color = this.textColor;
-	// 		}
-	// 	}
-	// 	this.currentTextLocations[handle] = ta;
-	// 	if (instant) console.timeEnd('text');
-	// 	if (!instant) {
-	// 		var i = 0;
-	// 		var interval = setInterval((function(){
-	// 			for(var j = 0; j < this.textNumber; j ++){
-	// 				if ((insertionPoint + i) >= cutOff || i >= textString.length) {
-	// 					clearInterval(interval);
-	// 					console.timeEnd('text');
-	// 					return;
-	// 				};
-	// 				var element = document.getElementById(this.canvasId).children[0].children[insertionPoint + i];
-	// 				element.innerText = textString[i];
-	// 				element.style.color = this.textColor;
-	// 				i++;
-	// 			}
-	// 		}).bind(this), this.textSpeed);
-	// 	}
-	// }
 
 	Canvas.prototype.insertTextChar = function(char, insertionPoint) {
 		var element = document.getElementById(this.canvasId).children[0].children[insertionPoint];
@@ -408,11 +379,50 @@
 
 	Canvas.prototype.removeText = function(handle) {
 		for (var i = 0; i < this.currentTextLocations[handle].length; i++) {
-			var pointID = this.currentTextLocations[handle][i];
-			var element = document.getElementById(this.canvasId).children[0].children[pointID];
-			element.innerText = selectCharacter(this.ramp, Math.round((this.currentImage[pointID*4 + 6] + this.currentImage[pointID*4 + 7] + this.currentImage[pointID*4 + 8])/3));
-			var color = this.palette[selectColor(this.currentImage[pointID*4 + 6], this.currentImage[pointID*4 + 7], this.currentImage[pointID*4 + 8], this.palette, this.distanceFunction)];
-			element.style.color = generateColorCode(color[0], color[1], color[2]);
+			var pointId = this.currentTextLocations[handle][i];
+			this.rerenderPoint(pointId);
 		}
 		delete this.currentTextLocations[handle];
+	}
+
+	Canvas.prototype.switchPalette = function(newPalette, speedFactor, callback) {
+		if(this.transitionLock) return false;
+		if(callback === undefined) callback = function(){};
+		this.transitionLock = true;
+		this.palette = newPalette;
+		var length = document.getElementById(this.canvasId).children[0].children.length;
+		this.deltaArray = Array();
+		for(var i = 0; i < length; i++) {
+			this.deltaArray[i] = i;
+		}
+		this.deltaArray = suArrayIntersection(this.deltaArray, this.generateTextLocationArray());
+		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
+		var shittyInterval = setInterval((function(){
+			if(this.shittyTransitionStep(numberPoints) === false) {
+				clearInterval(shittyInterval);
+				this.transitionLock = false;
+				callback();
+			}
+		}).bind(this), 4);
+	}
+
+	Canvas.prototype.switchRamp = function(newRamp, speedFactor, callback) {
+		if(this.transitionLock) return false;
+		if(callback === undefined) callback = function(){};
+		this.transitionLock = true;
+		this.ramp = newRamp;
+		var length = document.getElementById(this.canvasId).children[0].children.length;
+		this.deltaArray = Array();
+		for(var i = 0; i < length; i++) {
+			this.deltaArray[i] = i;
+		}
+		this.deltaArray = suArrayIntersection(this.deltaArray, this.generateTextLocationArray());
+		var numberPoints = Math.max(Math.round(this.deltaArray.length * speedFactor / 20), 1);
+		var shittyInterval = setInterval((function(){
+			if(this.shittyTransitionStep(numberPoints) === false) {
+				clearInterval(shittyInterval);
+				this.transitionLock = false;
+				callback();
+			}
+		}).bind(this), 4);
 	}
