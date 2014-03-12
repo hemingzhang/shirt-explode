@@ -186,6 +186,10 @@
 		currentBg = bg['bg1'];
 		currentG = new Array();
 		c.insertUnwrappedText('demo for senisoshitsu.js | 1-5: select background | 6-0: toggle characters | t: toggle textbox | - and +: switch color palettes | [ and ]: switch character ramps', 'text1', 0, 0, true);
+
+		loadImage('trans', textBox, function(){
+			toggleTextBox();
+		});
 	});
 	loadImage('bg2', bg);
 	loadImage('bg4', bg);
@@ -196,7 +200,6 @@
 	loadImage('g3', g);
 	loadImage('g4', g);
 	loadImage('g5', g);
-	loadImage('trans', textBox);
 
 	window.onkeydown = function(e){
 		if(!(c.transitionLock || c.textLock)){
